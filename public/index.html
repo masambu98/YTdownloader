@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bonbon.to - YouTube Video Downloader & Converter</title>
+    <meta name="description" content="Free YouTube Video Downloader - Download YouTube videos in MP4, MP3, 4K, HD. Convert YouTube to MP3, WAV, AAC. Fast, free, and easy online video downloader.">
+    <meta name="keywords" content="YouTube downloader, YouTube to MP3, YouTube to MP4, video downloader, online downloader">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bonbon.to/">
+    <meta property="og:title" content="bonbon.to - YouTube Video Downloader">
+    <meta property="og:description" content="Download YouTube videos and playlists in MP4, MP3, 4K. Fast and free online video downloader.">
+    <meta property="og:image" content="/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bonbon.to/">
+    <meta property="twitter:title" content="bonbon.to - YouTube Video Downloader">
+    <meta property="twitter:description" content="Download YouTube videos and playlists in MP4, MP3, 4K. Fast and free online video downloader.">
+    <meta property="twitter:image" content="/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📥</text></svg>">
+
+    <!-- Google AdSense (bonbon.to) -->
+    <script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2535797882780365"
+        crossorigin="anonymous">
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">📥</span>
+                <span class="logo-text">bonbon<span class="logo-highlight">.to</span></span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/youtube-video-downloader" data-i18n="nav.youtube">YouTube Video Downloader</a></li>
+                <li><a href="/youtube-4k-downloader" data-i18n="nav.4k">YouTube 4K Downloader</a></li>
+                <li><a href="/youtube-to-mp4" data-i18n="nav.mp4">YouTube to MP4</a></li>
+                <li><a href="/youtube-to-wav" data-i18n="nav.wav">YouTube to WAV</a></li>
+                <li><a href="/soundcloud-downloader" data-i18n="nav.soundcloud">SoundCloud Downloader</a></li>
+                <li><a href="/tiktok-downloader" data-i18n="nav.tiktok">TikTok Downloader</a></li>
+                <li><a href="/api" data-i18n="nav.api">API</a></li>
+                <li><a href="/app" data-i18n="nav.app">APP</a></li>
+            </ul>
+            <div class="language-selector">
+                <select id="languageSelect" aria-label="Select language">
+                    <option value="en">EN</option>
+                    <option value="es">ES</option>
+                    <option value="fr">FR</option>
+                    <option value="de">DE</option>
+                    <option value="it">IT</option>
+                    <option value="pt">PT</option>
+                    <option value="ru">RU</option>
+                    <option value="ja">JA</option>
+                    <option value="ko">KO</option>
+                    <option value="zh">ZH</option>
+                </select>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Leaderboard Ad (728x90) - Below Nav -->
+    <div class="ad-container leaderboard-ad">
+        <p class="ad-label">Advertisement</p>
+        <!-- AdSense manual unit placeholder: paste official code from AdSense here when you create a leaderboard unit -->
+        <div class="ad-placeholder" style="width:728px;height:90px;margin:0 auto;border-radius:12px;background:rgba(243,240,247,0.9);border:1px dashed rgba(179,157,219,0.8);display:flex;align-items:center;justify-content:center;font-size:11px;color:#8e8aa4;">
+            bonbon.to – leaderboard ad space
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="content-wrapper">
+            <!-- Sidebar Rectangle Ad (300x250) -->
+            <div class="sidebar-ad">
+                <p class="ad-label">Advertisement</p>
+                <!-- AdSense manual unit placeholder: paste official 300x250 unit code here -->
+                <div class="ad-placeholder" style="width:300px;height:250px;margin:0 auto;border-radius:12px;background:rgba(243,240,247,0.9);border:1px dashed rgba(179,157,219,0.8);display:flex;align-items:center;justify-content:center;font-size:11px;color:#8e8aa4;">
+                    bonbon.to – 300×250 ad space
+                </div>
+            </div>
+
+            <!-- Main Downloader Card -->
+            <div class="downloader-card">
+                <h1 class="main-title" data-i18n="title.main">YouTube Video Downloader</h1>
+                <p class="subtitle" data-i18n="title.subtitle">Download videos and playlists from YouTube in MP4, MP3, 4K, and more formats. Fast, free, and easy!</p>
+
+                <!-- Input Section -->
+                <div class="input-section">
+                    <div class="url-input-wrapper">
+                        <input 
+                            type="text" 
+                            id="urlInput" 
+                            class="url-input" 
+                            placeholder="Paste YouTube URL here..." 
+                            data-i18n-placeholder="input.placeholder"
+                            autocomplete="off"
+                        >
+                        <button class="paste-btn" id="pasteBtn" title="Paste from clipboard" data-i18n-title="input.paste">
+                            📋
+                        </button>
+                    </div>
+
+                    <div class="format-selector-wrapper">
+                        <label for="formatSelect" data-i18n="format.label">Format:</label>
+                        <select id="formatSelect" class="format-select">
+                            <optgroup label="Video (MP4)" data-i18n-label="format.video">
+                                <option value="mp4_4k">MP4 4K (2160p)</option>
+                                <option value="mp4_1080" selected>MP4 1080p (HD)</option>
+                                <option value="mp4_720">MP4 720p (HD)</option>
+                                <option value="mp4_480">MP4 480p</option>
+                                <option value="mp4_360">MP4 360p</option>
+                                <option value="mp4_240">MP4 240p</option>
+                                <option value="mp4_144">MP4 144p</option>
+                            </optgroup>
+                            <optgroup label="Audio Only" data-i18n-label="format.audio">
+                                <option value="mp3">MP3 (Audio)</option>
+                                <option value="wav">WAV (Audio)</option>
+                                <option value="aac">AAC (Audio)</option>
+                                <option value="flac">FLAC (Audio)</option>
+                                <option value="ogg">OGG (Audio)</option>
+                                <option value="opus">OPUS (Audio)</option>
+                            </optgroup>
+                            <optgroup label="Other Video" data-i18n-label="format.other">
+                                <option value="webm">WEBM (Video)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <button class="download-btn" id="downloadBtn" data-i18n="button.download">
+                        <span class="btn-text">Download</span>
+                        <span class="btn-loader" style="display: none;">
+                            <span class="spinner"></span>
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Error Message -->
+                <div class="error-message" id="errorMessage" style="display: none;"></div>
+
+                <!-- Video Info Card -->
+                <div class="video-info" id="videoInfo" style="display: none;">
+                    <div class="video-preview">
+                        <img id="videoThumbnail" src="" alt="Video thumbnail">
+                        <div class="video-duration" id="videoDuration"></div>
+                    </div>
+                    <div class="video-details">
+                        <h3 id="videoTitle"></h3>
+                        <p id="videoUploader"></p>
+                    </div>
+                </div>
+
+                <!-- Playlist Section -->
+                <div class="playlist-section" id="playlistSection" style="display: none;">
+                    <div class="playlist-header">
+                        <h3 data-i18n="playlist.title">Playlist Videos (<span id="playlistCount">0</span>)</h3>
+                        <div class="playlist-actions">
+                            <button class="select-all-btn" id="selectAllBtn" data-i18n="playlist.selectAll">Select All</button>
+                            <button class="deselect-all-btn" id="deselectAllBtn" data-i18n="playlist.deselectAll">Deselect All</button>
+                        </div>
+                    </div>
+                    <div class="playlist-videos" id="playlistVideos"></div>
+                    <button class="download-selected-btn" id="downloadSelectedBtn" data-i18n="playlist.downloadSelected">
+                        Download Selected (<span id="selectedCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <div class="progress-header">
+                        <span class="progress-status" id="progressStatus">Preparing download...</span>
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                    <div class="progress-details" id="progressDetails"></div>
+                </div>
+
+                <!-- Download Complete -->
+                <div class="download-complete" id="downloadComplete" style="display: none;">
+                    <div class="success-icon">✅</div>
+                    <h3 data-i18n="complete.title">Download Complete!</h3>
+                    <p data-i18n="complete.subtitle">Your file is ready</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rectangle Ad (300x250) - Below Downloader -->
+        <div class="ad-container rectangle-ad-below">
+            <p class="ad-label">Advertisement</p>
+            <!-- AdSense manual unit placeholder: paste official 300x250 unit code here -->
+            <div class="ad-placeholder" style="width:300px;height:250px;margin:0 auto;border-radius:12px;background:rgba(243,240,247,0.9);border:1px dashed rgba(179,157,219,0.8);display:flex;align-items:center;justify-content:center;font-size:11px;color:#8e8aa4;">
+                bonbon.to – 300×250 ad space
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <section class="features-section">
+            <h2 data-i18n="features.title">Why Choose bonbon.to?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 data-i18n="features.fast.title">Fast Downloads</h3>
+                    <p data-i18n="features.fast.desc">High-speed servers for quick video downloads. No waiting, no throttling.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎵</div>
+                    <h3 data-i18n="features.formats.title">Multiple Formats</h3>
+                    <p data-i18n="features.formats.desc">MP4, MP3, WAV, AAC, FLAC, OGG, WEBM, and more. Choose what works for you.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 data-i18n="features.quality.title">4K Support</h3>
+                    <p data-i18n="features.quality.desc">Download videos in 4K, 1080p, 720p, or any quality you prefer.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 data-i18n="features.safe.title">Safe & Secure</h3>
+                    <p data-i18n="features.safe.desc">No malware, no viruses. Your privacy is our priority. HTTPS encrypted.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🆓</div>
+                    <h3 data-i18n="features.free.title">100% Free</h3>
+                    <p data-i18n="features.free.desc">No registration required. No hidden fees. Unlimited downloads.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 data-i18n="features.playlist.title">Playlist Support</h3>
+                    <p data-i18n="features.playlist.desc">Download entire YouTube playlists with one click.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How To Section -->
+        <section class="how-to-section">
+            <h2 data-i18n="howto.title">How to Download YouTube Videos</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">🔗</div>
+                    <h3 data-i18n="howto.step1.title">Copy URL</h3>
+                    <p data-i18n="howto.step1.desc">Copy the YouTube video or playlist URL from your browser.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">📋</div>
+                    <h3 data-i18n="howto.step2.title">Paste URL</h3>
+                    <p data-i18n="howto.step2.desc">Paste the URL in the input box above and select your format.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">⬇️</div>
+                    <h3 data-i18n="howto.step3.title">Download</h3>
+                    <p data-i18n="howto.step3.desc">Click Download and get your file in seconds. It's that easy!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section">
+            <h2 data-i18n="faq.title">Frequently Asked Questions</h2>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-i18n="faq.q1">Is bonbon.to free to use?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p data-i18n="faq.a1">Yes! bonbon.to is completely free to use. There are no hidden fees, no registration required, and no download limits.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-i18n="faq.q2">What formats are supported?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p data-i18n="faq.a2">We support MP4 (144p to 4K), MP3, WAV, AAC, FLAC, OGG, OPUS, and WEBM formats. You can choose the format that best suits your needs.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-i18n="faq.q3">Can I download playlists?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p data-i18n="faq.a3">Yes! Simply paste a playlist URL and we'll show you all videos. You can download all videos or select specific ones.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-i18n="faq.q4">Is it safe and legal?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p data-i18n="faq.a4">bonbon.to is safe to use with HTTPS encryption. Please respect copyright laws and only download content you have permission to use.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span data-i18n="faq.q5">Why is my download slow?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p data-i18n="faq.a5">Download speed depends on your internet connection, the video file size, and server load. Try downloading during off-peak hours for faster speeds.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Leaderboard Ad (728x90) - Above Footer -->
+    <div class="ad-container leaderboard-ad-footer">
+        <p class="ad-label">Advertisement</p>
+        <!-- AdSense manual unit placeholder: paste official leaderboard unit code here -->
+        <div class="ad-placeholder" style="width:728px;height:90px;margin:0 auto;border-radius:12px;background:rgba(243,240,247,0.9);border:1px dashed rgba(179,157,219,0.8);display:flex;align-items:center;justify-content:center;font-size:11px;color:#8e8aa4;">
+            bonbon.to – leaderboard ad space
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <a href="/" class="footer-logo">
+                        <span class="logo-icon">📥</span>
+                        <span class="logo-text">bonbon<span class="logo-highlight">.to</span></span>
+                    </a>
+                    <p class="footer-tagline" data-i18n="footer.tagline">The best free YouTube video downloader online.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4 data-i18n="footer.tools">Tools</h4>
+                        <ul>
+                            <li><a href="/youtube-video-downloader" data-i18n="footer.youtube">YouTube Downloader</a></li>
+                            <li><a href="/youtube-to-mp3" data-i18n="footer.mp3">YouTube to MP3</a></li>
+                            <li><a href="/youtube-to-mp4" data-i18n="footer.mp4">YouTube to MP4</a></li>
+                            <li><a href="/soundcloud-downloader" data-i18n="footer.soundcloud">SoundCloud Downloader</a></li>
+                            <li><a href="/tiktok-downloader" data-i18n="footer.tiktok">TikTok Downloader</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4 data-i18n="footer.support">Support</h4>
+                        <ul>
+                            <li><a href="/faq" data-i18n="footer.faq">FAQ</a></li>
+                            <li><a href="/contact" data-i18n="footer.contact">Contact Us</a></li>
+                            <li><a href="/api" data-i18n="footer.api">API</a></li>
+                            <li><a href="/app" data-i18n="footer.app">Mobile App</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4 data-i18n="footer.legal">Legal</h4>
+                        <ul>
+                            <li><a href="/terms" data-i18n="footer.terms">Terms of Service</a></li>
+                            <li><a href="/privacy" data-i18n="footer.privacy">Privacy Policy</a></li>
+                            <li><a href="/dmca" data-i18n="footer.dmca">DMCA</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4 data-i18n="footer.language">Language</h4>
+                        <select id="footerLanguageSelect" class="footer-language-select">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                            <option value="ru">Русский</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="zh">中文</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="footer.copyright">© 2024 bonbon.to. All rights reserved.</p>
+                <p class="disclaimer" data-i18n="footer.disclaimer">We do not host any videos. All downloads are processed through yt-dlp.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="app.js?v=2"></script>
+</body>
+</html>
