@@ -91,43 +91,75 @@ app.post('/api/download', async (req, res) => {
     const height = heightMap[format] || 1080;
 
     const allFormats = [...(data.formats || []), ...(data.adaptiveFormats || [])];
-    let downloadUrl = null;
+    let candidateUrls = [];
 
     if (isAudio) {
-      const audioItem = allFormats.find(f => f.mimeType?.includes('audio'));
-      downloadUrl = audioItem?.url;
+      const audioItems = allFormats
+        .filter(f => f.mimeType?.includes('audio'))
+        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+      candidateUrls = audioItems.map(f => f.url).filter(Boolean);
     } else {
-      // ✅ FIXED: Always prefer muxed streams (video+audio combined) for playable files
-      const muxedFormats = allFormats.filter(f => 
-        f.mimeType?.includes('video/mp4') && 
-        (f.mimeType?.includes('audio') || f.audioQuality) && 
+      // Prefer muxed streams (video+audio combined) for playable files
+      const muxedFormats = allFormats.filter(f =>
+        f.mimeType?.includes('video/mp4') &&
+        (f.mimeType?.includes('audio') || f.audioQuality) &&
         f.height
       );
-      
-      // Sort by height (quality) and find best match <= requested height
-      const bestMuxed = muxedFormats
-        .sort((a, b) => b.height - a.height)
-        .find(f => parseInt(f.height) <= height);
-      
-      if (bestMuxed) {
-        downloadUrl = bestMuxed.url;
-      } else {
-        // Fallback to any video stream (may be video-only)
-        const fallback = allFormats
+
+      const sortedMuxed = muxedFormats.sort((a, b) => b.height - a.height);
+
+      // First: all muxed formats at or below requested height, highest first
+      candidateUrls = sortedMuxed
+        .filter(f => parseInt(f.height) <= height)
+        .map(f => f.url)
+        .filter(Boolean);
+
+      // If none at or below requested height, fall back to any muxed
+      if (!candidateUrls.length) {
+        candidateUrls = sortedMuxed.map(f => f.url).filter(Boolean);
+      }
+
+      // Absolute fallback: any MP4 video stream (may be video-only)
+      if (!candidateUrls.length) {
+        const fallbackVideos = allFormats
           .filter(f => f.mimeType?.includes('video/mp4') && f.height)
-          .sort((a, b) => b.height - a.height)
-          .find(f => parseInt(f.height) <= height);
-        downloadUrl = fallback?.url || allFormats.find(f => f.mimeType?.includes('video/mp4'))?.url;
+          .sort((a, b) => b.height - a.height);
+        candidateUrls = fallbackVideos.map(f => f.url).filter(Boolean);
       }
     }
 
-    if (!downloadUrl) return res.status(404).json({ error: 'Format not available' });
+    if (!candidateUrls.length) {
+      return res.status(404).json({ error: 'Format not available' });
+    }
 
     if (downloadId) progressStore[downloadId] = { progress: 20, status: 'downloading' };
 
-    const fileResponse = await fetch(downloadUrl);
-    if (!fileResponse.ok) {
-      return res.status(502).json({ error: 'Failed to fetch file from source' });
+    // Try candidates in order until one returns a successful response
+    let fileResponse = null;
+    for (const urlOption of candidateUrls) {
+      try {
+        const attempt = await fetch(urlOption);
+        if (attempt.ok) {
+          fileResponse = attempt;
+          break;
+        }
+      } catch (e) {
+        // Ignore network errors for this candidate and try the next one
+      }
+    }
+
+    if (!fileResponse || !fileResponse.ok) {
+      console.error('All candidate download URLs failed for video', {
+        videoId,
+        format,
+        candidateCount: candidateUrls.length
+      });
+      if (downloadId) {
+        progressStore[downloadId] = { progress: 0, status: 'error' };
+      }
+      return res.status(502).json({
+        error: 'Failed to fetch file from all available sources. Try a different quality or format.'
+      });
     }
 
     const filename = isAudio ? `audio.${format}` : `video_${height}p.mp4`;
