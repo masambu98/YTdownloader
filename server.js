@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { Readable } = require('stream');
-const ytdl = require('ytdl-core');
 const app = express();
 
 // ─── IN-MEMORY PROGRESS STORE ──────────────────────────────────────────────
@@ -92,159 +91,43 @@ app.post('/api/download', async (req, res) => {
     const height = heightMap[format] || 1080;
 
     const allFormats = [...(data.formats || []), ...(data.adaptiveFormats || [])];
-    let candidateUrls = [];
+    let downloadUrl = null;
 
     if (isAudio) {
-      const audioItems = allFormats
-        .filter(f => f.mimeType?.includes('audio'))
-        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-      candidateUrls = audioItems.map(f => f.url).filter(Boolean);
+      const audioItem = allFormats.find(f => f.mimeType?.includes('audio'));
+      downloadUrl = audioItem?.url;
     } else {
-      // Prefer muxed streams (video+audio combined) for playable files
-      const muxedFormats = allFormats.filter(f =>
-        f.mimeType?.includes('video/mp4') &&
-        (f.mimeType?.includes('audio') || f.audioQuality) &&
+      // ✅ FIXED: Always prefer muxed streams (video+audio combined) for playable files
+      const muxedFormats = allFormats.filter(f => 
+        f.mimeType?.includes('video/mp4') && 
+        (f.mimeType?.includes('audio') || f.audioQuality) && 
         f.height
       );
-
-      const sortedMuxed = muxedFormats.sort((a, b) => b.height - a.height);
-
-      // First: all muxed formats at or below requested height, highest first
-      candidateUrls = sortedMuxed
-        .filter(f => parseInt(f.height) <= height)
-        .map(f => f.url)
-        .filter(Boolean);
-
-      // If none at or below requested height, fall back to any muxed
-      if (!candidateUrls.length) {
-        candidateUrls = sortedMuxed.map(f => f.url).filter(Boolean);
-      }
-
-      // Absolute fallback: any MP4 video stream (may be video-only)
-      if (!candidateUrls.length) {
-        const fallbackVideos = allFormats
+      
+      // Sort by height (quality) and find best match <= requested height
+      const bestMuxed = muxedFormats
+        .sort((a, b) => b.height - a.height)
+        .find(f => parseInt(f.height) <= height);
+      
+      if (bestMuxed) {
+        downloadUrl = bestMuxed.url;
+      } else {
+        // Fallback to any video stream (may be video-only)
+        const fallback = allFormats
           .filter(f => f.mimeType?.includes('video/mp4') && f.height)
-          .sort((a, b) => b.height - a.height);
-        candidateUrls = fallbackVideos.map(f => f.url).filter(Boolean);
+          .sort((a, b) => b.height - a.height)
+          .find(f => parseInt(f.height) <= height);
+        downloadUrl = fallback?.url || allFormats.find(f => f.mimeType?.includes('video/mp4'))?.url;
       }
     }
 
-    if (!candidateUrls.length) {
-      return res.status(404).json({ error: 'Format not available' });
-    }
+    if (!downloadUrl) return res.status(404).json({ error: 'Format not available' });
 
     if (downloadId) progressStore[downloadId] = { progress: 20, status: 'downloading' };
 
-    // Try candidates in order until one returns a successful response
-    let fileResponse = null;
-    for (const urlOption of candidateUrls) {
-      try {
-        const attempt = await fetch(urlOption);
-        if (attempt.ok) {
-          fileResponse = attempt;
-          break;
-        }
-      } catch (e) {
-        // Ignore network errors for this candidate and try the next one
-      }
-    }
-
-    if (!fileResponse || !fileResponse.ok) {
-      console.error('All RapidAPI candidate download URLs failed for video', {
-        videoId,
-        format,
-        candidateCount: candidateUrls.length
-      });
-
-      // Fallback: stream directly from YouTube with ytdl-core
-      try {
-        const isPlaylistUrl = /[?&]list=/.test(url);
-        if (isPlaylistUrl) {
-          if (downloadId) {
-            progressStore[downloadId] = { progress: 0, status: 'error' };
-          }
-          return res.status(502).json({
-            error: 'This playlist URL cannot be downloaded right now. Please try a single video link.'
-          });
-        }
-
-        const isAudioOnly = isAudio;
-        const ext = isAudioOnly ? format : 'mp4';
-
-        const ytdlOptions = isAudioOnly
-          ? { filter: 'audioonly', quality: 'highestaudio' }
-          : { filter: 'audioandvideo', quality: 'highest' };
-
-        if (downloadId) {
-          progressStore[downloadId] = { progress: 15, status: 'downloading' };
-        }
-
-        const ytdlStream = ytdl(url, ytdlOptions);
-        let totalSize = 0;
-
-        ytdlStream.on('info', (info, formatInfo) => {
-          try {
-            totalSize = parseInt(formatInfo?.contentLength || '0', 10) || 0;
-          } catch {
-            totalSize = 0;
-          }
-
-          const safeTitle =
-            info?.videoDetails?.title?.replace(/[^\w.\-]+/g, '_').slice(0, 80) || 'video';
-          const filename = `${safeTitle}.${ext}`;
-
-          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-          res.setHeader(
-            'Content-Type',
-            isAudioOnly ? 'audio/mpeg' : 'video/mp4'
-          );
-          if (totalSize) {
-            res.setHeader('Content-Length', totalSize);
-          }
-        });
-
-        let downloadedYtdl = 0;
-        ytdlStream.on('data', (chunk) => {
-          downloadedYtdl += chunk.length;
-          if (downloadId && totalSize) {
-            const pct = Math.min(
-              95,
-              Math.round(20 + (downloadedYtdl / totalSize) * 75)
-            );
-            progressStore[downloadId] = { progress: pct, status: 'downloading' };
-          }
-        });
-
-        ytdlStream.on('end', () => {
-          if (downloadId) {
-            progressStore[downloadId] = { progress: 100, status: 'completed' };
-          }
-        });
-
-        ytdlStream.on('error', (err) => {
-          console.error('ytdl-core fallback failed', err.message || err);
-          if (downloadId) {
-            progressStore[downloadId] = { progress: 0, status: 'error' };
-          }
-          if (!res.headersSent) {
-            res.status(502).json({
-              error:
-                'Failed to fetch file from all available sources. Try a different video or format.'
-            });
-          }
-        });
-
-        return ytdlStream.pipe(res);
-      } catch (fallbackErr) {
-        console.error('ytdl-core fallback threw synchronously', fallbackErr);
-        if (downloadId) {
-          progressStore[downloadId] = { progress: 0, status: 'error' };
-        }
-        return res.status(502).json({
-          error:
-            'Failed to fetch file from all available sources. Try a different video or format.'
-        });
-      }
+    const fileResponse = await fetch(downloadUrl);
+    if (!fileResponse.ok) {
+      return res.status(502).json({ error: 'Failed to fetch file from source' });
     }
 
     const filename = isAudio ? `audio.${format}` : `video_${height}p.mp4`;
