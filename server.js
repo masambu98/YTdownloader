@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { Readable } = require('stream');
+const ytdl = require('ytdl-core');
 const app = express();
 
 // ─── IN-MEMORY PROGRESS STORE ──────────────────────────────────────────────
@@ -149,17 +150,101 @@ app.post('/api/download', async (req, res) => {
     }
 
     if (!fileResponse || !fileResponse.ok) {
-      console.error('All candidate download URLs failed for video', {
+      console.error('All RapidAPI candidate download URLs failed for video', {
         videoId,
         format,
         candidateCount: candidateUrls.length
       });
-      if (downloadId) {
-        progressStore[downloadId] = { progress: 0, status: 'error' };
+
+      // Fallback: stream directly from YouTube with ytdl-core
+      try {
+        const isPlaylistUrl = /[?&]list=/.test(url);
+        if (isPlaylistUrl) {
+          if (downloadId) {
+            progressStore[downloadId] = { progress: 0, status: 'error' };
+          }
+          return res.status(502).json({
+            error: 'This playlist URL cannot be downloaded right now. Please try a single video link.'
+          });
+        }
+
+        const isAudioOnly = isAudio;
+        const ext = isAudioOnly ? format : 'mp4';
+
+        const ytdlOptions = isAudioOnly
+          ? { filter: 'audioonly', quality: 'highestaudio' }
+          : { filter: 'audioandvideo', quality: 'highest' };
+
+        if (downloadId) {
+          progressStore[downloadId] = { progress: 15, status: 'downloading' };
+        }
+
+        const ytdlStream = ytdl(url, ytdlOptions);
+        let totalSize = 0;
+
+        ytdlStream.on('info', (info, formatInfo) => {
+          try {
+            totalSize = parseInt(formatInfo?.contentLength || '0', 10) || 0;
+          } catch {
+            totalSize = 0;
+          }
+
+          const safeTitle =
+            info?.videoDetails?.title?.replace(/[^\w.\-]+/g, '_').slice(0, 80) || 'video';
+          const filename = `${safeTitle}.${ext}`;
+
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.setHeader(
+            'Content-Type',
+            isAudioOnly ? 'audio/mpeg' : 'video/mp4'
+          );
+          if (totalSize) {
+            res.setHeader('Content-Length', totalSize);
+          }
+        });
+
+        let downloadedYtdl = 0;
+        ytdlStream.on('data', (chunk) => {
+          downloadedYtdl += chunk.length;
+          if (downloadId && totalSize) {
+            const pct = Math.min(
+              95,
+              Math.round(20 + (downloadedYtdl / totalSize) * 75)
+            );
+            progressStore[downloadId] = { progress: pct, status: 'downloading' };
+          }
+        });
+
+        ytdlStream.on('end', () => {
+          if (downloadId) {
+            progressStore[downloadId] = { progress: 100, status: 'completed' };
+          }
+        });
+
+        ytdlStream.on('error', (err) => {
+          console.error('ytdl-core fallback failed', err.message || err);
+          if (downloadId) {
+            progressStore[downloadId] = { progress: 0, status: 'error' };
+          }
+          if (!res.headersSent) {
+            res.status(502).json({
+              error:
+                'Failed to fetch file from all available sources. Try a different video or format.'
+            });
+          }
+        });
+
+        return ytdlStream.pipe(res);
+      } catch (fallbackErr) {
+        console.error('ytdl-core fallback threw synchronously', fallbackErr);
+        if (downloadId) {
+          progressStore[downloadId] = { progress: 0, status: 'error' };
+        }
+        return res.status(502).json({
+          error:
+            'Failed to fetch file from all available sources. Try a different video or format.'
+        });
       }
-      return res.status(502).json({
-        error: 'Failed to fetch file from all available sources. Try a different quality or format.'
-      });
     }
 
     const filename = isAudio ? `audio.${format}` : `video_${height}p.mp4`;
